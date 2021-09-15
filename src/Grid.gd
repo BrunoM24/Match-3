@@ -18,12 +18,19 @@ var possible_pieces = [
 	preload("res://src/OrangePiece.tscn")
 ]
 
+var first_touch = Vector2.ZERO
+var final_touch = Vector2.ZERO
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	randomize()
 	pieces = make_2d_array()
 	spawn_pieces()
+
+
+func _physics_process(delta):
+	touch_input()
 
 
 func make_2d_array() -> Array:
@@ -63,4 +70,23 @@ func grid_to_pixel(column, row):
 	var new_x = x_start + offset * column
 	var new_y = y_start + -offset * row
 	return Vector2(new_x, new_y)
+
+
+func pixel_to_grid(mouse_position: Vector2):
+	var column = round((mouse_position.x - x_start) / offset)
+	var row = round((mouse_position.y - y_start) / -offset)
+	return Vector2(column, row)
+
+
+func touch_input():
+	if Input.is_action_just_pressed("ui_touch"):
+		first_touch = get_global_mouse_position()
+		var grid_position = pixel_to_grid(first_touch)
+		print(grid_position)
+	if Input.is_action_just_released("ui_touch"):
+		final_touch = get_local_mouse_position()
+		var grid_position = pixel_to_grid(final_touch)
+		print(grid_position)
+	
+	pass
 
