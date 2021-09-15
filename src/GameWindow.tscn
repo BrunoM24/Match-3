@@ -45,5 +45,5 @@ script = ExtResource( 4 )
 width = 8
 height = 10
 x_start = 64
-y_start = 100
+y_start = 800
 offset = 64
