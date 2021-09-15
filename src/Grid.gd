@@ -40,9 +40,23 @@ func spawn_pieces():
 	for i in width:
 		for j in height:
 			var piece = possible_pieces[randi() % possible_pieces.size() - 1].instance()
+			while(match_at(i, j, piece.color)):
+				piece = possible_pieces[randi() % possible_pieces.size() - 1].instance()
 			piece.position = grid_to_pixel(i, j)
 			add_child(piece)
+			pieces[i][j] = piece
 
+
+func match_at(column, row, color):
+	if column > 1:
+		if pieces[column - 1][row] != null && pieces[column - 2][row] != null:
+			if pieces[column - 1][row].color == color && pieces[column - 2][row].color == color:
+				return true
+				
+	if row > 1:
+		if pieces[column][row - 1] != null && pieces[column][row - 2] != null:
+			if pieces[column][row - 1].color == color && pieces[column][row - 2].color == color:
+				return true
 
 
 func grid_to_pixel(column, row):
