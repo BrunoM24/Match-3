@@ -32,6 +32,7 @@ func _ready():
 
 func _physics_process(delta):
 	touch_input()
+	find_matches()
 
 
 func make_2d_array() -> Array:
@@ -128,4 +129,31 @@ func touch_difference(grid_1, grid_2):
 			swap_pieces(grid_1.x, grid_1.y, Vector2.DOWN)
 		elif difference.y < 0:
 			swap_pieces(grid_1.x, grid_1.y, Vector2.UP)
+
+
+func find_matches():
+	for col in width:
+		for row in height:
+			if pieces[col][row] != null:
+				var color = pieces[col][row].color
+				
+				if col > 0 && col < width - 1:
+					if pieces[col - 1][row] != null && pieces[col + 1][row]:
+						if pieces[col - 1][row].color == color && pieces[col + 1][row].color == color:
+							pieces[col - 1][row].matched = true
+							pieces[col - 1][row].dim()
+							pieces[col][row].matched = true
+							pieces[col][row].dim()
+							pieces[col + 1][row].matched = true
+							pieces[col + 1][row].dim()
+				
+				if row > 0 && row < height - 1:
+					if pieces[col][row - 1] != null && pieces[col][row + 1]:
+						if pieces[col][row - 1].color == color && pieces[col][row + 1].color == color:
+							pieces[col][row - 1].matched = true
+							pieces[col][row - 1].dim()
+							pieces[col][row].matched = true
+							pieces[col][row].dim()
+							pieces[col][row + 1].matched = true
+							pieces[col][row + 1].dim()
 
