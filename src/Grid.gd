@@ -163,8 +163,25 @@ func destroy_matches():
 				if pieces[col][row].matched:
 					pieces[col][row].queue_free()
 					pieces[col][row] = null
+	
+	get_parent().get_node("CollapseTimer").start()
 
+
+func collapse_collumns():
+	for col in width:
+		for row in height:
+			if pieces[col][row] == null:
+				for i in range(row + 1, height):
+					if pieces[col][i] != null:
+						pieces[col][i].move(grid_to_pixel(col, row))
+						pieces[col][row] = pieces[col][i]
+						pieces[col][i] = null
+						break
 
 func _on_DestroyTimer_timeout():
 	destroy_matches()
+
+
+func _on_CollapseTimer_timeout():
+	collapse_collumns()
 

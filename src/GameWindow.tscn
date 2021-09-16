@@ -52,4 +52,9 @@ offset = 64
 wait_time = 0.5
 one_shot = true
 
+[node name="CollapseTimer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
 [connection signal="timeout" from="DestroyTimer" to="Grid" method="_on_DestroyTimer_timeout"]
+[connection signal="timeout" from="CollapseTimer" to="Grid" method="_on_CollapseTimer_timeout"]
