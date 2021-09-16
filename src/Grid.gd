@@ -82,26 +82,20 @@ func pixel_to_grid(mouse_position: Vector2):
 
 func touch_input():
 	if Input.is_action_just_pressed("ui_touch"):
-		first_touch = get_global_mouse_position()
-		var grid_position = pixel_to_grid(first_touch)
-		if is_in_grid(grid_position.x, grid_position.y):
+		if is_in_grid(pixel_to_grid(get_global_mouse_position())):
+			first_touch = pixel_to_grid(get_global_mouse_position())
 			controlling = true
-			print(grid_position)
-		else:
-			controlling = false
 	
 	if Input.is_action_just_released("ui_touch"):
-		final_touch = get_local_mouse_position()
-		var grid_position = pixel_to_grid(final_touch)
-		if is_in_grid(grid_position.x, grid_position.y) && controlling:
-			print(grid_position)
-			touch_difference(pixel_to_grid(first_touch), grid_position)
-	
+		if is_in_grid(pixel_to_grid(get_global_mouse_position())) && controlling:
+			controlling = false
+			final_touch = pixel_to_grid(get_global_mouse_position())
+			touch_difference(first_touch, final_touch)
 
 
-func is_in_grid(column: int, row: int):
-	if column >= 0 && column < width:
-		if row >= 0 && row < height:
+func is_in_grid(grid_position: Vector2):
+	if grid_position.x >= 0 && grid_position.x < width:
+		if grid_position.y >= 0 && grid_position.y < height:
 			return true
 	
 	return false
