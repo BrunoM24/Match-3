@@ -32,7 +32,6 @@ func _ready():
 
 func _physics_process(delta):
 	touch_input()
-	find_matches()
 
 
 func make_2d_array() -> Array:
@@ -104,10 +103,13 @@ func is_in_grid(grid_position: Vector2):
 func swap_pieces(column, row, direction):
 	var first_piece = pieces[column][row]
 	var other_piece = pieces[column + direction.x][row + direction.y]
-	pieces[column][row] = other_piece
-	pieces[column + direction.x][row + direction.y] = first_piece
-	first_piece.move(grid_to_pixel(column + direction.x, row + direction.y))
-	other_piece.move(grid_to_pixel(column, row))
+	
+	if first_piece != null && other_piece != null:
+		pieces[column][row] = other_piece
+		pieces[column + direction.x][row + direction.y] = first_piece
+		first_piece.move(grid_to_pixel(column + direction.x, row + direction.y))
+		other_piece.move(grid_to_pixel(column, row))
+		find_matches()
 
 
 func touch_difference(grid_1, grid_2):
@@ -132,7 +134,7 @@ func find_matches():
 				var color = pieces[col][row].color
 				
 				if col > 0 && col < width - 1:
-					if pieces[col - 1][row] != null && pieces[col + 1][row]:
+					if pieces[col - 1][row] != null && pieces[col + 1][row] != null:
 						if pieces[col - 1][row].color == color && pieces[col + 1][row].color == color:
 							pieces[col - 1][row].matched = true
 							pieces[col - 1][row].dim()
@@ -142,7 +144,7 @@ func find_matches():
 							pieces[col + 1][row].dim()
 				
 				if row > 0 && row < height - 1:
-					if pieces[col][row - 1] != null && pieces[col][row + 1]:
+					if pieces[col][row - 1] != null && pieces[col][row + 1] != null:
 						if pieces[col][row - 1].color == color && pieces[col][row + 1].color == color:
 							pieces[col][row - 1].matched = true
 							pieces[col][row - 1].dim()
@@ -150,4 +152,19 @@ func find_matches():
 							pieces[col][row].dim()
 							pieces[col][row + 1].matched = true
 							pieces[col][row + 1].dim()
+	
+	get_parent().get_node("DestroyTimer").start()
+
+
+func destroy_matches():
+	for col in width:
+		for row in height:
+			if pieces[col][row] != null:
+				if pieces[col][row].matched:
+					pieces[col][row].queue_free()
+					pieces[col][row] = null
+
+
+func _on_DestroyTimer_timeout():
+	destroy_matches()
 
