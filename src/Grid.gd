@@ -6,6 +6,7 @@ export (int) var height
 export (int) var x_start
 export (int) var y_start
 export (int) var offset
+export (int) var y_offset
 
 var pieces = []
 
@@ -190,8 +191,9 @@ func refill_collumns():
 				while(match_at(col, row, piece.color)):
 					piece = possible_pieces[randi() % possible_pieces.size() - 1].instance()
 				
-				piece.position = grid_to_pixel(col, row)
 				add_child(piece)
+				piece.position = grid_to_pixel(col, row - y_offset)
+				piece.move(grid_to_pixel(col, row))
 				pieces[col][row] = piece
 
 
