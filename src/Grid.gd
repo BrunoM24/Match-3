@@ -28,6 +28,13 @@ enum {wait, move}
 
 var state
 
+#swap back variables
+var piece_one = null
+var piece_two = null
+var last_place = Vector2.ZERO
+var last_direction = Vector2.ZERO
+var move_checked = false
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -115,12 +122,30 @@ func swap_pieces(column, row, direction):
 	var other_piece = pieces[column + direction.x][row + direction.y]
 	
 	if first_piece != null && other_piece != null:
+		store_info(first_piece, other_piece, Vector2(column, row), direction)
 		state = wait
 		pieces[column][row] = other_piece
 		pieces[column + direction.x][row + direction.y] = first_piece
 		first_piece.move(grid_to_pixel(column + direction.x, row + direction.y))
 		other_piece.move(grid_to_pixel(column, row))
-		find_matches()
+		
+		if not move_checked:
+			find_matches()
+
+
+func store_info(first_piece, other_piece, place, direction):
+	piece_one = first_piece
+	piece_two = other_piece
+	last_place = place
+	last_direction = direction
+
+
+func swap_back():
+	if piece_one != null && piece_two != null:
+		swap_pieces(last_place.x, last_place.y, last_direction)
+	
+	state = move
+	move_checked = false
 
 
 func touch_difference(grid_1, grid_2):
@@ -168,14 +193,21 @@ func find_matches():
 
 
 func destroy_matches():
+	var was_matched = false
+	
 	for col in width:
 		for row in height:
 			if pieces[col][row] != null:
 				if pieces[col][row].matched:
+					was_matched = true
 					pieces[col][row].queue_free()
 					pieces[col][row] = null
 	
-	get_parent().get_node("CollapseTimer").start()
+	move_checked = true
+	if was_matched:
+		get_parent().get_node("CollapseTimer").start()
+	else:
+		swap_back()
 
 
 func collapse_collumns():
@@ -219,6 +251,7 @@ func after_refill():
 					break
 	
 	state = move
+	move_checked = false
 
 
 func _on_DestroyTimer_timeout():
