@@ -56,5 +56,10 @@ one_shot = true
 wait_time = 0.5
 one_shot = true
 
+[node name="RefillTimer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
 [connection signal="timeout" from="DestroyTimer" to="Grid" method="_on_DestroyTimer_timeout"]
 [connection signal="timeout" from="CollapseTimer" to="Grid" method="_on_CollapseTimer_timeout"]
+[connection signal="timeout" from="RefillTimer" to="Grid" method="_on_RefillTimer_timeout"]

@@ -15,7 +15,7 @@ var possible_pieces = [
 	preload("res://src/LightGreenPiece.tscn"),
 	preload("res://src/OrangePiece.tscn"),
 	preload("res://src/PinkPiece.tscn"),
-	preload("res://src/OrangePiece.tscn")
+	preload("res://src/YellowPiece.tscn")
 ]
 
 var first_touch = Vector2.ZERO
@@ -177,6 +177,23 @@ func collapse_collumns():
 						pieces[col][row] = pieces[col][i]
 						pieces[col][i] = null
 						break
+	
+	get_parent().get_node("RefillTimer").start()
+
+
+func refill_collumns():
+	for col in width:
+		for row in height:
+			if pieces[col][row] == null:
+				var piece = possible_pieces[randi() % possible_pieces.size() - 1].instance()
+				
+				while(match_at(col, row, piece.color)):
+					piece = possible_pieces[randi() % possible_pieces.size() - 1].instance()
+				
+				piece.position = grid_to_pixel(col, row)
+				add_child(piece)
+				pieces[col][row] = piece
+
 
 func _on_DestroyTimer_timeout():
 	destroy_matches()
@@ -184,4 +201,8 @@ func _on_DestroyTimer_timeout():
 
 func _on_CollapseTimer_timeout():
 	collapse_collumns()
+
+
+func _on_RefillTimer_timeout():
+	refill_collumns()
 
