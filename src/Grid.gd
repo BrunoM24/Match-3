@@ -23,16 +23,23 @@ var first_touch = Vector2.ZERO
 var final_touch = Vector2.ZERO
 var controlling = false
 
+# State Machine
+enum {wait, move}
+
+var state
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	state = move
 	randomize()
 	pieces = make_2d_array()
 	spawn_pieces()
 
 
 func _physics_process(delta):
-	touch_input()
+	if state == move:
+		touch_input()
 
 
 func make_2d_array() -> Array:
@@ -56,7 +63,7 @@ func spawn_pieces():
 			pieces[i][j] = piece
 
 
-func match_at(column, row, color):
+func match_at(column, row, color) -> bool:
 	if column > 1:
 		if pieces[column - 1][row] != null && pieces[column - 2][row] != null:
 			if pieces[column - 1][row].color == color && pieces[column - 2][row].color == color:
@@ -66,6 +73,8 @@ func match_at(column, row, color):
 		if pieces[column][row - 1] != null && pieces[column][row - 2] != null:
 			if pieces[column][row - 1].color == color && pieces[column][row - 2].color == color:
 				return true
+	
+	return false
 
 
 func grid_to_pixel(column, row):
@@ -106,6 +115,7 @@ func swap_pieces(column, row, direction):
 	var other_piece = pieces[column + direction.x][row + direction.y]
 	
 	if first_piece != null && other_piece != null:
+		state = wait
 		pieces[column][row] = other_piece
 		pieces[column + direction.x][row + direction.y] = first_piece
 		first_piece.move(grid_to_pixel(column + direction.x, row + direction.y))
@@ -195,6 +205,20 @@ func refill_collumns():
 				piece.position = grid_to_pixel(col, row - y_offset)
 				piece.move(grid_to_pixel(col, row))
 				pieces[col][row] = piece
+	
+	after_refill()
+
+
+func after_refill():
+	for col in width:
+		for row in height:
+			if pieces[col][row] !=  null:
+				if match_at(col, row, pieces[col][row].color):
+					find_matches()
+					get_parent().get_node("DestroyTimer").start()
+					break
+	
+	state = move
 
 
 func _on_DestroyTimer_timeout():
