@@ -11,12 +11,12 @@ export (int) var y_offset
 var pieces = []
 
 var possible_pieces = [
-	preload("res://src/BluePiece.tscn"),
-	preload("res://src/GreenPiece.tscn"),
-	preload("res://src/LightGreenPiece.tscn"),
-	preload("res://src/OrangePiece.tscn"),
-	preload("res://src/PinkPiece.tscn"),
-	preload("res://src/YellowPiece.tscn")
+	preload("res://src/pieces/BluePiece.tscn"),
+	preload("res://src/pieces/GreenPiece.tscn"),
+	preload("res://src/pieces/LightGreenPiece.tscn"),
+	preload("res://src/pieces/OrangePiece.tscn"),
+	preload("res://src/pieces/PinkPiece.tscn"),
+	preload("res://src/pieces/YellowPiece.tscn")
 ]
 
 var first_touch = Vector2.ZERO
