@@ -8,6 +8,9 @@ export (int) var y_start
 export (int) var offset
 export (int) var y_offset
 
+# Obstacle props
+export (PoolVector2Array) var empty_spaces
+
 var pieces = []
 
 var possible_pieces = [
@@ -60,14 +63,19 @@ func make_2d_array() -> Array:
 
 
 func spawn_pieces():
-	for i in width:
-		for j in height:
+	for col in width:
+		for row in height:
+			if restricted_movement(Vector2(col, row)):
+				continue
+			
 			var piece = possible_pieces[randi() % possible_pieces.size() - 1].instance()
-			while(match_at(i, j, piece.color)):
+			
+			while(match_at(col, row, piece.color)):
 				piece = possible_pieces[randi() % possible_pieces.size() - 1].instance()
-			piece.position = grid_to_pixel(i, j)
+			
+			piece.position = grid_to_pixel(col, row)
 			add_child(piece)
-			pieces[i][j] = piece
+			pieces[col][row] = piece
 
 
 func match_at(column, row, color) -> bool:
@@ -213,7 +221,7 @@ func destroy_matches():
 func collapse_collumns():
 	for col in width:
 		for row in height:
-			if pieces[col][row] == null:
+			if pieces[col][row] == null && not restricted_movement(Vector2(col, row)):
 				for i in range(row + 1, height):
 					if pieces[col][i] != null:
 						pieces[col][i].move(grid_to_pixel(col, row))
@@ -227,7 +235,7 @@ func collapse_collumns():
 func refill_collumns():
 	for col in width:
 		for row in height:
-			if pieces[col][row] == null:
+			if pieces[col][row] == null && not restricted_movement(Vector2(col, row)):
 				var piece = possible_pieces[randi() % possible_pieces.size() - 1].instance()
 				
 				while(match_at(col, row, piece.color)):
@@ -252,6 +260,15 @@ func after_refill():
 	
 	state = move
 	move_checked = false
+
+
+func restricted_movement(place: Vector2) -> bool:
+	#check the empty pieces
+	for i in empty_spaces.size():
+		if empty_spaces[i] == place:
+			return true
+	
+	return false
 
 
 func _on_DestroyTimer_timeout():
