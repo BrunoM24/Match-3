@@ -32,7 +32,6 @@ func _on_Grid_make_ice(board_position: Vector2):
 func _on_Grid_damage_ice(board_position: Vector2):
 	var piece = ice_pieces[board_position.x][board_position.y]
 	if piece != null:
-		print("damage piece", board_position)		
 		piece.take_damage(1)
 		if piece.health <= 0:
 			piece.queue_free()
