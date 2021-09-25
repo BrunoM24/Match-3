@@ -7,7 +7,7 @@ var lock_pieces = []
 var width := 8
 var height := 10
 
-var lock_lock = preload("res://src/obstacles/Licorice.tscn")
+var lock_piece = preload("res://src/obstacles/Licorice.tscn")
 
 
 func _init():
@@ -25,7 +25,7 @@ func make_2d_array() -> Array:
 
 
 func _on_Grid_make_lock(board_position: Vector2):
-	var lock = lock_lock.instance()
+	var lock = lock_piece.instance()
 	lock.position = Vector2(board_position.x * 64 + 64, board_position.y * -64 + 800)
 	add_child(lock)
 	lock_pieces[board_position.x][board_position.y] = lock

@@ -12,12 +12,15 @@ export (int) var y_offset
 export (PoolVector2Array) var empty_spaces
 export (PoolVector2Array) var ice_spaces
 export (PoolVector2Array) var lock_spaces
+export (PoolVector2Array) var concrete_spaces
 
 # Obstacle Signals
 signal make_ice
 signal damage_ice
 signal make_lock
 signal damage_lock
+signal make_concrete
+signal damage_concrete
 
 var pieces = []
 
@@ -55,6 +58,7 @@ func _ready():
 	spawn_pieces()
 	spawn_ice()
 	spawn_locks()
+	spawn_concrete()
 
 
 func _physics_process(delta):
@@ -96,6 +100,11 @@ func spawn_ice() -> void:
 func spawn_locks() -> void:
 	for lock in lock_spaces:
 		emit_signal("make_lock", lock)
+
+
+func spawn_concrete() -> void:
+	for concrete in concrete_spaces:
+		emit_signal("make_concrete", concrete)
 
 
 func match_at(column: int, row: int, color: String) -> bool:
@@ -245,9 +254,22 @@ func destroy_matches() -> void:
 		swap_back()
 
 
+func check_concrete(col: int, row: int):
+	#check right
+	if col < width - 1:
+		emit_signal("damage_concrete", Vector2(col + 1, row))
+	if col > 0:
+		emit_signal("damage_concrete", Vector2(col - 1, row))
+	if row > 0:
+		emit_signal("damage_concrete", Vector2(col, row - 1))
+	if row < height - 1:
+		emit_signal("damage_concrete", Vector2(col, row + 1))
+
+
 func damage_special(col: int, row: int) -> void:
 	emit_signal("damage_ice", Vector2(col, row))
 	emit_signal("damage_lock", Vector2(col, row))
+	check_concrete(col, row)
 
 
 func collapse_collumns() -> void:
@@ -296,7 +318,7 @@ func after_refill() -> void:
 
 func restricted_fill(place: Vector2) -> bool:
 	#check the empty pieces
-	return is_in_array(empty_spaces, place)
+	return is_in_array(empty_spaces, place) || is_in_array(concrete_spaces, place)
 
 
 func restricted_move(place: Vector2) -> bool:
@@ -309,6 +331,18 @@ func is_in_array(array: Array, item) -> bool:
 			return true
 	
 	return false
+
+
+func remove_from_array(array: Array, item) -> Array:
+	var idx
+	
+	for i in array.size():
+		if item == array[i]:
+			idx = i
+			break
+	
+	array.remove(idx)
+	return array
 
 
 func _on_DestroyTimer_timeout():
@@ -324,12 +358,9 @@ func _on_RefillTimer_timeout():
 
 
 func _on_LockHolder_remove_lock(lock_position: Vector2):
-	var idx
-	
-	for i in lock_spaces.size():
-		if lock_position == lock_spaces[i]:
-			idx = i
-			break
-	
-	lock_spaces.remove(idx)
+	lock_spaces = remove_from_array(lock_spaces, lock_position)
+
+
+func _on_ConcreteHolder_remove_concrete(concrete_position: Vector2) -> void:
+	concrete_spaces = remove_from_array(concrete_spaces, concrete_position)
 
