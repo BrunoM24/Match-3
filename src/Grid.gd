@@ -11,10 +11,13 @@ export (int) var y_offset
 # Obstacle props
 export (PoolVector2Array) var empty_spaces
 export (PoolVector2Array) var ice_spaces
+export (PoolVector2Array) var lock_spaces
 
 # Obstacle Signals
 signal make_ice
 signal damage_ice
+signal make_lock
+signal damage_lock
 
 var pieces = []
 
@@ -51,6 +54,7 @@ func _ready():
 	pieces = make_2d_array()
 	spawn_pieces()
 	spawn_ice()
+	spawn_locks()
 
 
 func _physics_process(delta):
@@ -87,6 +91,11 @@ func spawn_pieces() -> void:
 func spawn_ice() -> void:
 	for ice in ice_spaces:
 		emit_signal("make_ice", ice)
+
+
+func spawn_locks() -> void:
+	for lock in lock_spaces:
+		emit_signal("make_lock", lock)
 
 
 func match_at(column: int, row: int, color: String) -> bool:
@@ -141,6 +150,9 @@ func swap_pieces(column : int, row : int, direction: Vector2) -> void:
 	var other_piece = pieces[column + direction.x][row + direction.y]
 	
 	if first_piece != null && other_piece != null:
+		if restricted_move(Vector2(column, row)) || restricted_move(Vector2(column + direction.x, row + direction.y)):
+			return
+		
 		store_info(first_piece, other_piece, Vector2(column, row), direction)
 		state = wait
 		pieces[column][row] = other_piece
@@ -221,7 +233,7 @@ func destroy_matches() -> void:
 		for row in height:
 			if pieces[col][row] != null:
 				if pieces[col][row].matched:
-					emit_signal("damage_ice", Vector2(col, row))
+					damage_special(col, row)
 					was_matched = true
 					pieces[col][row].queue_free()
 					pieces[col][row] = null
@@ -231,6 +243,11 @@ func destroy_matches() -> void:
 		get_parent().get_node("CollapseTimer").start()
 	else:
 		swap_back()
+
+
+func damage_special(col: int, row: int) -> void:
+	emit_signal("damage_ice", Vector2(col, row))
+	emit_signal("damage_lock", Vector2(col, row))
 
 
 func collapse_collumns() -> void:
@@ -282,6 +299,10 @@ func restricted_fill(place: Vector2) -> bool:
 	return is_in_array(empty_spaces, place)
 
 
+func restricted_move(place: Vector2) -> bool:
+	return is_in_array(lock_spaces, place)
+
+
 func is_in_array(array: Array, item) -> bool:
 	for i in array.size():
 		if array[i] == item:
@@ -300,4 +321,15 @@ func _on_CollapseTimer_timeout():
 
 func _on_RefillTimer_timeout():
 	refill_collumns()
+
+
+func _on_LockHolder_remove_lock(lock_position: Vector2):
+	var idx
+	
+	for i in lock_spaces.size():
+		if lock_position == lock_spaces[i]:
+			idx = i
+			break
+	
+	lock_spaces.remove(idx)
 
