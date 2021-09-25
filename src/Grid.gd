@@ -10,6 +10,11 @@ export (int) var y_offset
 
 # Obstacle props
 export (PoolVector2Array) var empty_spaces
+export (PoolVector2Array) var ice_spaces
+
+# Obstacle Signals
+signal make_ice
+signal damage_ice
 
 var pieces = []
 
@@ -45,6 +50,7 @@ func _ready():
 	randomize()
 	pieces = make_2d_array()
 	spawn_pieces()
+	spawn_ice()
 
 
 func _physics_process(delta):
@@ -76,6 +82,12 @@ func spawn_pieces():
 			piece.position = grid_to_pixel(col, row)
 			add_child(piece)
 			pieces[col][row] = piece
+
+
+func spawn_ice():
+	for ice in ice_spaces:
+		print(ice)
+		emit_signal("make_ice", ice)
 
 
 func match_at(column, row, color) -> bool:
@@ -207,6 +219,7 @@ func destroy_matches():
 		for row in height:
 			if pieces[col][row] != null:
 				if pieces[col][row].matched:
+					emit_signal("damage_ice", Vector2(col, row))
 					was_matched = true
 					pieces[col][row].queue_free()
 					pieces[col][row] = null
