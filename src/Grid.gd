@@ -13,6 +13,9 @@ export (PoolVector2Array) var empty_spaces
 export (PoolVector2Array) var ice_spaces
 export (PoolVector2Array) var lock_spaces
 export (PoolVector2Array) var concrete_spaces
+export (PoolVector2Array) var slime_spaces
+
+var damage_slime := false
 
 # Obstacle Signals
 signal make_ice
@@ -21,6 +24,8 @@ signal make_lock
 signal damage_lock
 signal make_concrete
 signal damage_concrete
+signal make_slime
+signal damage_slime
 
 var pieces = []
 
@@ -59,6 +64,7 @@ func _ready():
 	spawn_ice()
 	spawn_locks()
 	spawn_concrete()
+	spawn_slime()
 
 
 func _physics_process(delta):
@@ -105,6 +111,11 @@ func spawn_locks() -> void:
 func spawn_concrete() -> void:
 	for concrete in concrete_spaces:
 		emit_signal("make_concrete", concrete)
+
+
+func spawn_slime() -> void:
+	for slime in slime_spaces:
+		emit_signal("make_slime", slime)
 
 
 func match_at(column: int, row: int, color: String) -> bool:
@@ -254,7 +265,7 @@ func destroy_matches() -> void:
 		swap_back()
 
 
-func check_concrete(col: int, row: int):
+func check_concrete(col: int, row: int) -> void:
 	#check right
 	if col < width - 1:
 		emit_signal("damage_concrete", Vector2(col + 1, row))
@@ -266,10 +277,23 @@ func check_concrete(col: int, row: int):
 		emit_signal("damage_concrete", Vector2(col, row + 1))
 
 
+func check_slime(col: int, row: int) -> void:
+	#check right
+	if col < width - 1:
+		emit_signal("damage_slime", Vector2(col + 1, row))
+	if col > 0:
+		emit_signal("damage_slime", Vector2(col - 1, row))
+	if row > 0:
+		emit_signal("damage_slime", Vector2(col, row - 1))
+	if row < height - 1:
+		emit_signal("damage_slime", Vector2(col, row + 1))
+
+
 func damage_special(col: int, row: int) -> void:
 	emit_signal("damage_ice", Vector2(col, row))
 	emit_signal("damage_lock", Vector2(col, row))
 	check_concrete(col, row)
+	check_slime(col, row)
 
 
 func collapse_collumns() -> void:
@@ -312,13 +336,17 @@ func after_refill() -> void:
 					get_parent().get_node("DestroyTimer").start()
 					break
 	
+	if !damage_slime:
+		generate_slime()
+	
 	state = move
 	move_checked = false
+	damage_slime = false
 
 
 func restricted_fill(place: Vector2) -> bool:
 	#check the empty pieces
-	return is_in_array(empty_spaces, place) || is_in_array(concrete_spaces, place)
+	return is_in_array(empty_spaces, place) || is_in_array(concrete_spaces, place) || is_in_array(slime_spaces, place)
 
 
 func restricted_move(place: Vector2) -> bool:
@@ -345,6 +373,40 @@ func remove_from_array(array: Array, item) -> Array:
 	return array
 
 
+func find_normal_neighbor(col, row) -> Vector2:
+	if is_in_grid(Vector2(col + 1, row)) && pieces[col + 1][row] != null:
+		return Vector2(col + 1, row)
+	if is_in_grid(Vector2(col - 1, row)) && pieces[col - 1][row] != null:
+		return Vector2(col - 1, row)
+	if is_in_grid(Vector2(col, row + 1)) && pieces[col][row + 1] != null:
+		return Vector2(col, row + 1)
+	if is_in_grid(Vector2(col, row - 1)) && pieces[col][row - 1] != null:
+		return Vector2(col, row - 1)
+	
+	return Vector2.ZERO
+
+
+func generate_slime():
+	if slime_spaces.size() == 0:
+		return
+	
+	var slime_made = false
+	
+	while !slime_made:
+		var random_num = randi() % slime_spaces.size()
+		var current = slime_spaces[random_num]
+		
+		var neighbor = find_normal_neighbor(current.x, current.y)
+		
+		if neighbor != null && neighbor != Vector2.ZERO:
+			# Turn into a slime
+			slime_made = true
+			pieces[neighbor.x][neighbor.y].queue_free()
+			pieces[neighbor.x][neighbor.y] = null
+			slime_spaces.append(neighbor)
+			emit_signal("make_slime", neighbor)
+
+
 func _on_DestroyTimer_timeout():
 	destroy_matches()
 
@@ -357,10 +419,14 @@ func _on_RefillTimer_timeout():
 	refill_collumns()
 
 
-func _on_LockHolder_remove_lock(lock_position: Vector2):
+func _on_LockHolder_remove_lock(lock_position: Vector2) -> void:
 	lock_spaces = remove_from_array(lock_spaces, lock_position)
 
 
 func _on_ConcreteHolder_remove_concrete(concrete_position: Vector2) -> void:
 	concrete_spaces = remove_from_array(concrete_spaces, concrete_position)
 
+
+func _on_SlimeHolder_remove_slime(slime_position: Vector2) -> void:
+	damage_slime = true
+	slime_spaces = remove_from_array(slime_spaces, slime_position)
