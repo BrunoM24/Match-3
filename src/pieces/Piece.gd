@@ -22,7 +22,7 @@ func move(target):
 	move_tween.start()
 
 
-func make_column_bomd() -> void:
+func make_column_bomb() -> void:
 	is_column_bomb = true
 	sprite.texture = column_texture
 	sprite.self_modulate = Color(1, 1, 1, 1)

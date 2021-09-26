@@ -15,7 +15,7 @@ export (PoolVector2Array) var lock_spaces
 export (PoolVector2Array) var concrete_spaces
 export (PoolVector2Array) var slime_spaces
 
-var damage_slime := false
+var damaged_slime := false
 
 # Obstacle Signals
 signal make_ice
@@ -241,7 +241,18 @@ func find_matches() -> void:
 							add_to_array(current_matches, Vector2(col, row + 1))
 							add_to_array(current_matches, Vector2(col, row - 1))
 	
+	get_bombed_pieces()
 	get_parent().get_node("DestroyTimer").start()
+
+
+func get_bombed_pieces():
+	for col in width:
+		for row in height:
+			if pieces[col][row] != null && pieces[col][row].matched:
+				if pieces[col][row].is_column_bomb:
+					match_all_in_column(col)
+				elif pieces[col][row].is_row_bomb:
+					match_all_in_row(row)
 
 
 func is_piece_null(col: int, row: int) -> bool:
@@ -290,14 +301,11 @@ func find_bombs() -> void:
 		
 		if col_matched == 5 || row_matched == 5:
 			print("Color Bomb")
-		elif col_matched == 3 && row_matched == 3:
-			print("adjacent bom")
+		elif col_matched >= 3 && row_matched >= 3:
 			make_bomb(0, piece.color)
 		elif col_matched == 4:
-			print("Column Bomb")
 			make_bomb(1, piece.color)
 		elif row_matched == 4:
-			print("Row Bomb")
 			make_bomb(2, piece.color)
 
 
@@ -315,9 +323,15 @@ func make_bomb(bomb_type: int, color: String) -> void:
 
 func change_bomb(bomb_type: int, piece) -> void:
 	match bomb_type:
-		0: piece.make_adjacent_bomt()
-		1: piece.make_column_bomb()
-		2: piece.make_row_bomb()
+		0: 
+			print("Make adjacent bomb")
+			piece.make_adjacent_bomb()
+		1: 
+			print("Make Column Bomb")
+			piece.make_row_bomb()
+		2: 
+			print("Make Row Bomb")
+			piece.make_column_bomb()
 
 
 func check_concrete(col: int, row: int) -> void:
@@ -391,12 +405,12 @@ func after_refill() -> void:
 					get_parent().get_node("DestroyTimer").start()
 					break
 	
-	if !damage_slime:
+	if !damaged_slime:
 		generate_slime()
 	
 	state = move
 	move_checked = false
-	damage_slime = false
+	damaged_slime = false
 
 
 func restricted_fill(place: Vector2) -> bool:
@@ -445,6 +459,18 @@ func find_normal_neighbor(col, row) -> Vector2:
 	return Vector2.ZERO
 
 
+func match_all_in_column(col: int) -> void:
+	for row in height:
+		if pieces[col][row] != null:
+			pieces[col][row].matched = true
+
+
+func match_all_in_row(row: int) -> void:
+	for col in width:
+		if pieces[col][row] != null:
+			pieces[col][row].matched = true
+
+
 func generate_slime() -> void:
 	if slime_spaces.size() == 0:
 		return
@@ -459,11 +485,11 @@ func generate_slime() -> void:
 		
 		if neighbor != null && neighbor != Vector2.ZERO:
 			# Turn into a slime
-			slime_made = true
 			pieces[neighbor.x][neighbor.y].queue_free()
 			pieces[neighbor.x][neighbor.y] = null
 			slime_spaces.append(neighbor)
 			emit_signal("make_slime", neighbor)
+			slime_made = true
 
 
 func _on_DestroyTimer_timeout():
@@ -487,6 +513,6 @@ func _on_ConcreteHolder_remove_concrete(concrete_position: Vector2) -> void:
 
 
 func _on_SlimeHolder_remove_slime(slime_position: Vector2) -> void:
-	damage_slime = true
+	damaged_slime = true
 	slime_spaces = remove_from_array(slime_spaces, slime_position)
 
