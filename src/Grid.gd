@@ -43,10 +43,13 @@ var first_touch := Vector2.ZERO
 var final_touch := Vector2.ZERO
 var controlling := false
 
+# Bomb Types
+enum BombTypes { COLUMN, ROW, ADJACENT, COLOR }
+
 # State Machine
 enum {wait, move}
 
-var state
+var state: int
 
 #swap back variables
 var piece_one = null
@@ -58,8 +61,8 @@ var move_checked = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	state = move
 	randomize()
+	state = move
 	pieces = make_2d_array()
 	spawn_pieces()
 	spawn_ice()
@@ -74,7 +77,7 @@ func _physics_process(delta):
 
 
 func make_2d_array() -> Array:
-	var array := []
+	var array := [[]]
 	for i in width:
 		array.append([])
 		for j in height:
@@ -253,6 +256,8 @@ func get_bombed_pieces():
 					match_all_in_column(col)
 				elif pieces[col][row].is_row_bomb:
 					match_all_in_row(row)
+				elif pieces[col][row].is_adjacent_bomb:
+					find_adjacent_pieces(col, row)
 
 
 func is_piece_null(col: int, row: int) -> bool:
@@ -302,11 +307,11 @@ func find_bombs() -> void:
 		if col_matched == 5 || row_matched == 5:
 			print("Color Bomb")
 		elif col_matched >= 3 && row_matched >= 3:
-			make_bomb(0, piece.color)
+			make_bomb(BombTypes.ADJACENT, piece.color)
 		elif col_matched == 4:
-			make_bomb(1, piece.color)
+			make_bomb(BombTypes.ROW, piece.color)
 		elif row_matched == 4:
-			make_bomb(2, piece.color)
+			make_bomb(BombTypes.COLUMN, piece.color)
 
 
 func make_bomb(bomb_type: int, color: String) -> void:
@@ -323,14 +328,14 @@ func make_bomb(bomb_type: int, color: String) -> void:
 
 func change_bomb(bomb_type: int, piece) -> void:
 	match bomb_type:
-		0: 
+		BombTypes.ADJACENT: 
 			print("Make adjacent bomb")
 			piece.make_adjacent_bomb()
-		1: 
-			print("Make Column Bomb")
-			piece.make_row_bomb()
-		2: 
+		BombTypes.ROW: 
 			print("Make Row Bomb")
+			piece.make_row_bomb()
+		BombTypes.COLUMN: 
+			print("Make Column Bomb")
 			piece.make_column_bomb()
 
 
@@ -462,13 +467,33 @@ func find_normal_neighbor(col, row) -> Vector2:
 func match_all_in_column(col: int) -> void:
 	for row in height:
 		if pieces[col][row] != null:
+			if pieces[col][row].is_row_bomb:
+				match_all_in_row(row)
+			elif pieces[col][row].is_adjacent_bomb:
+				find_adjacent_pieces(col, row)
 			pieces[col][row].matched = true
 
 
 func match_all_in_row(row: int) -> void:
 	for col in width:
 		if pieces[col][row] != null:
+			if pieces[col][row].is_column_bomb:
+				match_all_in_column(col)
+			elif pieces[col][row].is_adjacent_bomb:
+				find_adjacent_pieces(col, row)
 			pieces[col][row].matched = true
+
+
+func find_adjacent_pieces(col: int, row: int) -> void:
+	for i in range(-1, 2):
+		for j in range(-1, 2):
+			if is_in_grid(Vector2(col + i, row + j)):
+				if pieces[col + i][row + j] != null:
+					if pieces[col][row].is_row_bomb:
+						match_all_in_row(row)
+					elif pieces[col][row].is_column_bomb:
+						match_all_in_column(col)
+					pieces[col + i][row + j].matched = true
 
 
 func generate_slime() -> void:
